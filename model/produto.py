@@ -1,47 +1,43 @@
-from sqlalchemy import Column, String, Integer, DateTime, Float
+from sqlalchemy import Column, String, Integer, DateTime, Float, Boolean
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from typing import Union
 
-from  model import Base, Comentario
+from  model import Base
 
 
 class Produto(Base):
     __tablename__ = 'produto'
 
     id = Column("pk_produto", Integer, primary_key=True)
-    nome = Column(String(140), unique=True)
-    quantidade = Column(Integer)
+    descricao = Column(String(140), unique=True)
     valor = Column(Float)
-    data_insercao = Column(DateTime, default=datetime.now())
+    disponivel = Column(Boolean, default=True)
+    data_cadastro = Column(DateTime, default=datetime.now())
 
     # Definição do relacionamento entre o produto e o comentário.
     # Essa relação é implicita, não está salva na tabela 'produto',
     # mas aqui estou deixando para SQLAlchemy a responsabilidade
     # de reconstruir esse relacionamento.
-    comentarios = relationship("Comentario")
 
-    def __init__(self, nome:str, quantidade:int, valor:float,
-                 data_insercao:Union[DateTime, None] = None):
+    def __init__(self, descricao:str, valor:float, disponivel: Union[bool, None] = None,
+                 data_cadastro:Union[DateTime, None] = None):
         """
         Cria um Produto
 
         Arguments:
-            nome: nome do produto.
+            descricao: descricao do produto.
             quantidade: quantidade que se espera comprar daquele produto
             valor: valor esperado para o produto
+            disponivel: indicador se o produto estará disponível para venda
             data_insercao: data de quando o produto foi inserido à base
         """
-        self.nome = nome
-        self.quantidade = quantidade
+        self.descricao = descricao
         self.valor = valor
 
         # se não for informada, será o data exata da inserção no banco
-        if data_insercao:
-            self.data_insercao = data_insercao
-
-    def adiciona_comentario(self, comentario:Comentario):
-        """ Adiciona um novo comentário ao Produto
-        """
-        self.comentarios.append(comentario)
-
+        if data_cadastro:
+            self.data_insercao = data_cadastro
+            
+        if disponivel:
+            self.disponivel = True

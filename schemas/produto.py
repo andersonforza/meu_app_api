@@ -1,23 +1,20 @@
 from pydantic import BaseModel
-from typing import Optional, List
+from typing import List
 from model.produto import Produto
-
-from schemas import ComentarioSchema
-
 
 class ProdutoSchema(BaseModel):
     """ Define como um novo produto a ser inserido deve ser representado
     """
-    nome: str = "Banana Prata"
-    quantidade: Optional[int] = 12
-    valor: float = 12.50
+    descricao: str = "Brigadeiro"
+    valor: float = 2.50
+    disponivel:  bool = True
 
 
 class ProdutoBuscaSchema(BaseModel):
     """ Define como deve ser a estrutura que representa a busca. Que será
         feita apenas com base no nome do produto.
     """
-    nome: str = "Teste"
+    descricao: str = "Teste"
 
 
 class ListagemProdutosSchema(BaseModel):
@@ -33,8 +30,8 @@ def apresenta_produtos(produtos: List[Produto]):
     result = []
     for produto in produtos:
         result.append({
-            "nome": produto.nome,
-            "quantidade": produto.quantidade,
+            "nome": produto.descricao,
+            "disponivel": produto.disponivel,
             "valor": produto.valor,
         })
 
@@ -42,14 +39,12 @@ def apresenta_produtos(produtos: List[Produto]):
 
 
 class ProdutoViewSchema(BaseModel):
-    """ Define como um produto será retornado: produto + comentários.
+    """ Define como um produto será retornado.
     """
     id: int = 1
-    nome: str = "Banana Prata"
-    quantidade: Optional[int] = 12
+    descricao: str = "Brigadeiro"
     valor: float = 12.50
-    total_cometarios: int = 1
-    comentarios:List[ComentarioSchema]
+    disponivel: bool = True
 
 
 class ProdutoDelSchema(BaseModel):
@@ -65,9 +60,7 @@ def apresenta_produto(produto: Produto):
     """
     return {
         "id": produto.id,
-        "nome": produto.nome,
-        "quantidade": produto.quantidade,
+        "descricao": produto.descricao,
         "valor": produto.valor,
-        "total_cometarios": len(produto.comentarios),
-        "comentarios": [{"texto": c.texto} for c in produto.comentarios]
+        "descricao": produto.descricao
     }

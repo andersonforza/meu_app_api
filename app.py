@@ -4,7 +4,7 @@ from urllib.parse import unquote
 
 from sqlalchemy.exc import IntegrityError
 
-from model import Session, Produto, Comentario
+from model import Session, Produto, Pedido
 from logger import logger
 from schemas import *
 from flask_cors import CORS
@@ -16,7 +16,7 @@ CORS(app)
 # definindo tags
 home_tag = Tag(name="Documentação", description="Seleção de documentação: Swagger, Redoc ou RapiDoc")
 produto_tag = Tag(name="Produto", description="Adição, visualização e remoção de produtos à base")
-comentario_tag = Tag(name="Comentario", description="Adição de um comentário à um produtos cadastrado na base")
+pedido_tag = Tag(name="Pedido", description="Adição, visualização e remoção de pedidos à base")
 
 
 @app.get('/', tags=[home_tag])
@@ -34,10 +34,10 @@ def add_produto(form: ProdutoSchema):
     Retorna uma representação dos produtos e comentários associados.
     """
     produto = Produto(
-        nome=form.nome,
-        quantidade=form.quantidade,
-        valor=form.valor)
-    logger.debug(f"Adicionando produto de nome: '{produto.nome}'")
+        nome=form.descricao,
+        valor=form.valor,
+        disponivel=form.disponivel)
+    logger.debug(f"Adicionando produto de nome: '{produto.descricao}'")
     try:
         # criando conexão com a base
         session = Session()
@@ -45,19 +45,19 @@ def add_produto(form: ProdutoSchema):
         session.add(produto)
         # efetivando o camando de adição de novo item na tabela
         session.commit()
-        logger.debug(f"Adicionado produto de nome: '{produto.nome}'")
+        logger.debug(f"Adicionado produto de nome: '{produto.descricao}'")
         return apresenta_produto(produto), 200
 
     except IntegrityError as e:
         # como a duplicidade do nome é a provável razão do IntegrityError
         error_msg = "Produto de mesmo nome já salvo na base :/"
-        logger.warning(f"Erro ao adicionar produto '{produto.nome}', {error_msg}")
+        logger.warning(f"Erro ao adicionar produto '{produto.descricao}', {error_msg}")
         return {"mesage": error_msg}, 409
 
     except Exception as e:
         # caso um erro fora do previsto
         error_msg = "Não foi possível salvar novo item :/"
-        logger.warning(f"Erro ao adicionar produto '{produto.nome}', {error_msg}")
+        logger.warning(f"Erro ao adicionar produto '{produto.descricao}', {error_msg}")
         return {"mesage": error_msg}, 400
 
 
@@ -136,15 +136,15 @@ def del_produto(query: ProdutoBuscaSchema):
         return {"mesage": error_msg}, 404
 
 
-@app.post('/cometario', tags=[comentario_tag],
-          responses={"200": ProdutoViewSchema, "404": ErrorSchema})
-def add_comentario(form: ComentarioSchema):
-    """Adiciona de um novo comentário à um produtos cadastrado na base identificado pelo id
+@app.post('/pedido', tags=[pedido_tag],
+          responses={"200": PedidoViewSchema, "404": ErrorSchema})
+def add_pedido(form: PedidoSchema):
+    """Adiciona de um novo pedido com o produto cadastrado na base identificado pelo id
 
     Retorna uma representação dos produtos e comentários associados.
     """
     produto_id  = form.produto_id
-    logger.debug(f"Adicionando comentários ao produto #{produto_id}")
+    logger.debug(f"Adicionando um pedido com o produto #{produto_id}")
     # criando conexão com a base
     session = Session()
     # fazendo a busca pelo produto
@@ -153,18 +153,19 @@ def add_comentario(form: ComentarioSchema):
     if not produto:
         # se produto não encontrado
         error_msg = "Produto não encontrado na base :/"
-        logger.warning(f"Erro ao adicionar comentário ao produto '{produto_id}', {error_msg}")
+        logger.warning(f"Erro ao adicionar pedido com o produto '{produto_id}', {error_msg}")
         return {"mesage": error_msg}, 404
 
-    # criando o comentário
-    texto = form.texto
-    comentario = Comentario(texto)
-
-    # adicionando o comentário ao produto
-    produto.adiciona_comentario(comentario)
+    # cria um pedido sem parâmetros 
+    pedido  = Pedido()
+    # Adiciona o produto ao pedido
+    pedido.adicionar_produto(produto)
+    
+    # adicionando o pedido
+    session.add(pedido)
     session.commit()
 
-    logger.debug(f"Adicionado comentário ao produto #{produto_id}")
+    logger.debug(f"Adicionado o pedido com o produto #{produto_id}")
 
     # retorna a representação de produto
-    return apresenta_produto(produto), 200
+    return apresenta_pedido(pedido), 200
